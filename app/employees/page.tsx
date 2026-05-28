@@ -4,15 +4,21 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { AppShell } from "@/components/AppShell";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { EmployeeForm } from "@/components/EmployeeForm";
 import { Modal } from "@/components/Modal";
+import { PageLoader } from "@/components/PageLoader";
+import { PayslipList } from "@/components/PayslipList";
+import { UserAvatar } from "@/components/UserAvatar";
 import { gqlRequest } from "@/lib/graphql";
+import { useDebouncedValue } from "@/lib/useDebouncedValue";
 import { formatCurrency, formatDate } from "@/lib/format";
 import {
   EMPTY_EMPLOYEE_FORM,
   type Employee,
   type EmployeeFormValues,
-  type EmployeeListPage
+  type EmployeeListPage,
+  type Payslip
 } from "@/lib/types";
 import { useAuthStore } from "@/store/auth.store";
 import { useToastStore } from "@/store/toast.store";
@@ -37,11 +43,12 @@ function employeeToForm(employee: Employee): EmployeeFormValues {
 
 export default function EmployeesPage() {
   const router = useRouter();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, hydrated, role } = useAuthStore();
   const pushToast = useToastStore((state) => state.push);
   const [pageData, setPageData] = useState<EmployeeListPage | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("");
@@ -51,7 +58,13 @@ export default function EmployeesPage() {
 
   const [modalMode, setModalMode] = useState<ModalMode>(null);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Employee | null>(null);
   const [formValues, setFormValues] = useState<EmployeeFormValues>(EMPTY_EMPLOYEE_FORM);
+  const [viewPayslips, setViewPayslips] = useState<Payslip[]>([]);
+  const [payslipsLoading, setPayslipsLoading] = useState(false);
+
+  const debouncedSearch = useDebouncedValue(searchTerm, 400);
+  const isSearchPending = searchTerm !== debouncedSearch;
 
   const loadEmployees = useCallback(async (): Promise<void> => {
     setLoading(true);
@@ -84,7 +97,7 @@ export default function EmployeesPage() {
         }`,
         {
           input: {
-            search: searchTerm.trim() || undefined,
+            search: debouncedSearch.trim() || undefined,
             department: departmentFilter.trim() || undefined,
             status: statusFilter === "all" ? undefined : statusFilter,
             page: currentPage,
@@ -100,18 +113,25 @@ export default function EmployeesPage() {
     } finally {
       setLoading(false);
     }
-  }, [searchTerm, departmentFilter, statusFilter, currentPage, pushToast]);
+  }, [debouncedSearch, departmentFilter, statusFilter, currentPage, pushToast]);
 
   useEffect(() => {
+    if (!hydrated) {
+      return;
+    }
     if (!isAuthenticated) {
       router.replace("/login");
+      return;
+    }
+    if (role === "employee") {
+      router.replace("/portal");
       return;
     }
     const timer = window.setTimeout(() => {
       void loadEmployees();
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [isAuthenticated, router, loadEmployees]);
+  }, [hydrated, isAuthenticated, role, router, loadEmployees]);
 
   function openCreate(): void {
     setFormValues(EMPTY_EMPLOYEE_FORM);
@@ -119,9 +139,32 @@ export default function EmployeesPage() {
     setModalMode("create");
   }
 
+  async function loadEmployeePayslips(employeeId: string): Promise<void> {
+    setPayslipsLoading(true);
+    try {
+      const data = await gqlRequest<{ employeePayslips: Payslip[] }>(
+        `query EmployeePayslips($employeeId: String!) {
+          employeePayslips(employeeId: $employeeId) {
+            id periodLabel fileName createdAt
+          }
+        }`,
+        { employeeId }
+      );
+      setViewPayslips(data.employeePayslips);
+    } catch (err) {
+      setViewPayslips([]);
+      const message = err instanceof Error ? err.message : "Failed to load payslips";
+      pushToast(message, "error");
+    } finally {
+      setPayslipsLoading(false);
+    }
+  }
+
   function openView(employee: Employee): void {
     setSelectedEmployee(employee);
+    setViewPayslips([]);
     setModalMode("view");
+    void loadEmployeePayslips(employee.id);
   }
 
   function openEdit(employee: Employee): void {
@@ -205,33 +248,40 @@ export default function EmployeesPage() {
     }
   }
 
-  async function handleDelete(employee: Employee): Promise<void> {
-    const confirmed = window.confirm(`Delete ${employee.fullName}? This cannot be undone.`);
-    if (!confirmed) {
+  async function confirmDelete(): Promise<void> {
+    if (!deleteTarget) {
       return;
     }
+    setDeleting(true);
     setError("");
     try {
       await gqlRequest<{ deleteEmployee: boolean }>(
         `mutation DeleteEmployee($id: String!) { deleteEmployee(id: $id) }`,
-        { id: employee.id }
+        { id: deleteTarget.id }
       );
+      setDeleteTarget(null);
       await loadEmployees();
       pushToast("Employee deleted.", "success");
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to delete employee";
       setError(message);
       pushToast(message, "error");
+    } finally {
+      setDeleting(false);
     }
   }
 
   const items = pageData?.items ?? [];
 
+  if (!hydrated) {
+    return <PageLoader label="Loading dashboard..." fullScreen />;
+  }
+
   return (
     <AppShell title="Employees" subtitle="Create, view, update, and delete workforce records stored in PostgreSQL.">
       <section className="dashboard">
         <div className="statsGrid">
-          <article className="statCard">
+          <article className="statCard statCardAccent">
             <p>Total employees</p>
             <h3>{pageData?.totalCount ?? 0}</h3>
           </article>
@@ -240,8 +290,8 @@ export default function EmployeesPage() {
             <h3>{pageData?.page ?? 1}</h3>
           </article>
           <article className="statCard">
-            <p>Page size</p>
-            <h3>{pageData?.pageSize ?? pageSize}</h3>
+            <p>Total pages</p>
+            <h3>{pageData?.totalPages ?? 1}</h3>
           </article>
         </div>
 
@@ -249,7 +299,7 @@ export default function EmployeesPage() {
           <div className="row">
             <div>
               <h2>Employee directory</h2>
-              <p className="muted">Data is loaded from PostgreSQL via GraphQL (Redis is used only for sessions).</p>
+              <p className="muted">Server-side search, filters, and pagination via GraphQL.</p>
             </div>
             <div className="actionRow">
               <button type="button" onClick={openCreate}>+ Add employee</button>
@@ -293,9 +343,15 @@ export default function EmployeesPage() {
           {error ? <p className="error">{error}</p> : null}
           <p className="muted">
             Showing {items.length} of {pageData?.totalCount ?? 0} records
+            {isSearchPending ? " · Searching..." : null}
           </p>
 
-          <div className="tableWrap dataTableWrap">
+          <div className={`tableWrap dataTableWrap ${loading ? "tableLoading" : ""}`}>
+            {loading ? (
+              <div className="tableOverlay">
+                <PageLoader label="Loading employees..." />
+              </div>
+            ) : null}
             <table className="dataTable">
               <thead>
                 <tr>
@@ -324,7 +380,7 @@ export default function EmployeesPage() {
                     <td className="tableActions">
                       <button type="button" className="ghost" onClick={() => openView(employee)}>View</button>
                       <button type="button" className="ghost" onClick={() => openEdit(employee)}>Edit</button>
-                      <button type="button" className="ghost dangerText" onClick={() => void handleDelete(employee)}>
+                      <button type="button" className="ghost dangerText" onClick={() => setDeleteTarget(employee)}>
                         Delete
                       </button>
                     </td>
@@ -363,7 +419,7 @@ export default function EmployeesPage() {
       </section>
 
       {modalMode === "create" ? (
-        <Modal title="Add employee" onClose={closeModal} wide>
+        <Modal title="Add employee" subtitle="A welcome email is sent automatically after creation." onClose={closeModal} wide>
           <EmployeeForm
             values={formValues}
             onChange={setFormValues}
@@ -375,8 +431,8 @@ export default function EmployeesPage() {
         </Modal>
       ) : null}
 
-      {modalMode === "edit" ? (
-        <Modal title="Edit employee" onClose={closeModal} wide>
+      {modalMode === "edit" && selectedEmployee ? (
+        <Modal title="Edit employee" subtitle={`Updating ${selectedEmployee.employeeCode}`} onClose={closeModal} wide>
           <EmployeeForm
             values={formValues}
             onChange={setFormValues}
@@ -389,26 +445,86 @@ export default function EmployeesPage() {
       ) : null}
 
       {modalMode === "view" && selectedEmployee ? (
-        <Modal title="Employee details" onClose={closeModal}>
-          <dl className="detailList">
-            <div><dt>Name</dt><dd>{selectedEmployee.fullName}</dd></div>
-            <div><dt>Email</dt><dd>{selectedEmployee.email}</dd></div>
-            <div><dt>Employee code</dt><dd>{selectedEmployee.employeeCode}</dd></div>
-            <div><dt>Job title</dt><dd>{selectedEmployee.jobTitle}</dd></div>
-            <div><dt>Department</dt><dd>{selectedEmployee.department}</dd></div>
-            <div><dt>Country</dt><dd>{selectedEmployee.country}</dd></div>
-            <div><dt>Salary</dt><dd>{formatCurrency(selectedEmployee.salary, selectedEmployee.currency)}</dd></div>
-            <div><dt>Joined</dt><dd>{formatDate(selectedEmployee.dateOfJoining)}</dd></div>
-            <div><dt>Employment</dt><dd>{selectedEmployee.employmentType}</dd></div>
-            <div><dt>Status</dt><dd>{selectedEmployee.status}</dd></div>
-            <div><dt>Manager</dt><dd>{selectedEmployee.managerName || "—"}</dd></div>
-          </dl>
+        <Modal title="Employee profile" onClose={closeModal} wide>
+          <div className="profileHero">
+            <UserAvatar size="md" title={selectedEmployee.fullName} />
+            <div>
+              <h3>{selectedEmployee.fullName}</h3>
+              <p className="muted">{selectedEmployee.email}</p>
+              <div className="profileMeta">
+                <span className={`status ${selectedEmployee.status.toLowerCase()}`}>{selectedEmployee.status}</span>
+                <span className="profileCode">{selectedEmployee.employeeCode}</span>
+              </div>
+            </div>
+          </div>
+          <div className="profileGrid">
+            <article className="profileCard">
+              <p className="profileCardLabel">Job title</p>
+              <p className="profileCardValue">{selectedEmployee.jobTitle}</p>
+            </article>
+            <article className="profileCard">
+              <p className="profileCardLabel">Department</p>
+              <p className="profileCardValue">{selectedEmployee.department}</p>
+            </article>
+            <article className="profileCard">
+              <p className="profileCardLabel">Country</p>
+              <p className="profileCardValue">{selectedEmployee.country}</p>
+            </article>
+            <article className="profileCard">
+              <p className="profileCardLabel">Salary</p>
+              <p className="profileCardValue">{formatCurrency(selectedEmployee.salary, selectedEmployee.currency)}</p>
+            </article>
+            <article className="profileCard">
+              <p className="profileCardLabel">Joined</p>
+              <p className="profileCardValue">{formatDate(selectedEmployee.dateOfJoining)}</p>
+            </article>
+            <article className="profileCard">
+              <p className="profileCardLabel">Employment</p>
+              <p className="profileCardValue">{selectedEmployee.employmentType.replace("_", " ")}</p>
+            </article>
+            <article className="profileCard">
+              <p className="profileCardLabel">Manager</p>
+              <p className="profileCardValue">{selectedEmployee.managerName || "—"}</p>
+            </article>
+            <article className="profileCard">
+              <p className="profileCardLabel">Active flag</p>
+              <p className="profileCardValue">{selectedEmployee.isActive ? "Yes" : "No"}</p>
+            </article>
+          </div>
+
+          <section className="profilePayslipSection">
+            <h3>Salary slips</h3>
+            <p className="muted small">Download payslips generated for this employee.</p>
+            {payslipsLoading ? (
+              <PageLoader label="Loading payslips..." />
+            ) : (
+              <PayslipList
+                payslips={viewPayslips}
+                emptyMessage="No payslips on file. Payslips are created when a new employee is added."
+              />
+            )}
+          </section>
+
           <div className="formActions">
             <button type="button" className="secondary" onClick={closeModal}>Close</button>
-            <button type="button" onClick={() => openEdit(selectedEmployee)}>Edit</button>
+            <button type="button" onClick={() => openEdit(selectedEmployee)}>Edit employee</button>
           </div>
         </Modal>
       ) : null}
+
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        title="Delete employee?"
+        description={
+          deleteTarget
+            ? `${deleteTarget.fullName} (${deleteTarget.employeeCode}) will be permanently removed from PostgreSQL. This action cannot be undone.`
+            : ""
+        }
+        confirmLabel="Delete employee"
+        onConfirm={() => void confirmDelete()}
+        onCancel={() => setDeleteTarget(null)}
+        loading={deleting}
+      />
     </AppShell>
   );
 }

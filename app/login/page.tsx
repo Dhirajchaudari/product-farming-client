@@ -3,24 +3,45 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { LoginHeroPanel } from "@/components/LoginHeroPanel";
+import { PageLoader } from "@/components/PageLoader";
 import { gqlRequest } from "@/lib/graphql";
-import type { SessionUser } from "@/lib/types";
+import { homeRouteForRole } from "@/lib/routing";
+import type { SessionUser, UserRole } from "@/lib/types";
 import { useAuthStore } from "@/store/auth.store";
 import { useToastStore } from "@/store/toast.store";
 
+function MailIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path d="M4 6h16v12H4V6z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+      <path d="M4 7l8 6 8-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function LockIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <rect x="5" y="11" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M8 11V8a4 4 0 118 0v3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export default function LoginPage() {
   const router = useRouter();
-  const { isAuthenticated, setAuth } = useAuthStore();
+  const { isAuthenticated, hydrated, role, setAuth } = useAuthStore();
   const pushToast = useToastStore((state) => state.push);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (isAuthenticated) {
-      router.replace("/employees");
+    if (hydrated && isAuthenticated) {
+      router.replace(homeRouteForRole(role));
     }
-  }, [isAuthenticated, router]);
+  }, [hydrated, isAuthenticated, role, router]);
 
   async function handleLogin(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
@@ -32,9 +53,10 @@ export default function LoginPage() {
         }`,
         { email, password }
       );
-      setAuth(data.loginWithPassword.email, data.loginWithPassword.role as "hr_manager" | "admin");
+      const userRole = data.loginWithPassword.role as UserRole;
+      setAuth(data.loginWithPassword.email, userRole);
       pushToast("Signed in successfully.", "success");
-      router.push("/employees");
+      router.push(homeRouteForRole(userRole));
     } catch (err) {
       const message = err instanceof Error ? err.message : "Login failed";
       pushToast(
@@ -46,55 +68,65 @@ export default function LoginPage() {
     }
   }
 
-  return (
-    <div className="loginPage">
-      <div className="loginBackdrop" />
-      <div className="loginGrid">
-        <section className="loginBrand">
-          <p className="badge">PayrollPilot HR</p>
-          <h1>Modern payroll operations for HR teams</h1>
-          <p className="subtitle">
-            Secure workforce management with PostgreSQL-backed records and lightweight Redis sessions.
-          </p>
-          <div className="loginPills">
-            <span>Employee CRUD</span>
-            <span>Salary insights</span>
-            <span>Email notifications</span>
-          </div>
-        </section>
+  if (!hydrated) {
+    return <PageLoader label="Preparing sign in..." fullScreen />;
+  }
 
-        <section className="loginCard card">
-          <div className="loginCardHead">
-            <h2>HR sign in</h2>
-            <p className="muted">Enter your credentials to access the dashboard.</p>
+  return (
+    <div className="loginSplit loginSplitModern">
+      <aside className="loginHero loginAnimLeft">
+        <div className="loginHeroOverlay" />
+        <LoginHeroPanel variant="login" />
+      </aside>
+
+      <main className="loginPanel loginAnimRight">
+        <div className="loginPanelInner">
+          <div className="loginPanelBrandMobile">
+            <span className="brandMark">PP</span>
+            <span>PayrollPilot</span>
           </div>
-          <form className="loginForm" onSubmit={handleLogin}>
-            <label htmlFor="email">Work email</label>
-            <input
-              id="email"
-              type="email"
-              autoComplete="email"
-              placeholder="hr@company.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
+          <h2>Sign in</h2>
+
+          <form className="loginForm loginFormMinimal" onSubmit={handleLogin}>
+            <label htmlFor="email">Email</label>
+            <div className="inputWithIcon">
+              <MailIcon />
+              <input
+                id="email"
+                type="email"
+                autoComplete="email"
+                placeholder="you@company.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
             <label htmlFor="password">Password</label>
-            <input
-              id="password"
-              type="password"
-              autoComplete="current-password"
-              placeholder="Enter your password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-            <button type="submit" className="fullWidth primaryBtn" disabled={loading}>
-              {loading ? "Signing in..." : "Sign in to dashboard"}
+            <div className="inputWithIcon">
+              <LockIcon />
+              <input
+                id="password"
+                type="password"
+                autoComplete="current-password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+            <button type="submit" className="fullWidth primaryBtn loginSubmitBtn" disabled={loading}>
+              {loading ? (
+                <span className="btnLoading">
+                  <span className="spinner" />
+                  Signing in...
+                </span>
+              ) : (
+                "Sign in"
+              )}
             </button>
           </form>
-        </section>
-      </div>
+        </div>
+      </main>
     </div>
   );
 }

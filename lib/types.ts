@@ -45,6 +45,16 @@ export interface EmployeeFormValues {
   managerName: string;
 }
 
+export interface Payslip {
+  id: string;
+  periodLabel: string;
+  periodMonth: number;
+  periodYear: number;
+  cloudinaryUrl: string;
+  fileName: string;
+  createdAt: string;
+}
+
 export const EMPTY_EMPLOYEE_FORM: EmployeeFormValues = {
   fullName: "",
   email: "",
