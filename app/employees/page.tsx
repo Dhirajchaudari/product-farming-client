@@ -1,199 +1,287 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { AppShell } from "@/components/AppShell";
+import { EmployeeForm } from "@/components/EmployeeForm";
+import { Modal } from "@/components/Modal";
 import { gqlRequest } from "@/lib/graphql";
+import { formatCurrency, formatDate } from "@/lib/format";
+import {
+  EMPTY_EMPLOYEE_FORM,
+  type Employee,
+  type EmployeeFormValues,
+  type EmployeeListPage
+} from "@/lib/types";
 import { useAuthStore } from "@/store/auth.store";
 
-interface Employee {
-  id: string;
-  fullName: string;
-  employeeCode: string;
-  jobTitle: string;
-  department: string;
-  country: string;
-  salary: number;
-  currency: string;
-  status: string;
-}
+type ModalMode = "create" | "edit" | "view" | null;
 
-function formatCurrency(amount: number, currency: string): string {
-  try {
-    return new Intl.NumberFormat("en-IN", { style: "currency", currency, maximumFractionDigits: 0 }).format(amount);
-  } catch {
-    return `${amount} ${currency}`;
-  }
+function employeeToForm(employee: Employee): EmployeeFormValues {
+  return {
+    fullName: employee.fullName,
+    email: employee.email,
+    jobTitle: employee.jobTitle,
+    department: employee.department,
+    country: employee.country,
+    salary: employee.salary,
+    currency: employee.currency,
+    dateOfJoining: employee.dateOfJoining.slice(0, 10),
+    employmentType: employee.employmentType,
+    status: employee.status,
+    managerName: employee.managerName ?? ""
+  };
 }
 
 export default function EmployeesPage() {
   const router = useRouter();
-  const { isAuthenticated, resetAuth } = useAuthStore();
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [loadingEmployees, setLoadingEmployees] = useState(false);
+  const { isAuthenticated } = useAuthStore();
+  const [pageData, setPageData] = useState<EmployeeListPage | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedDepartment, setSelectedDepartment] = useState("all");
-  const [selectedStatus, setSelectedStatus] = useState("all");
+  const [departmentFilter, setDepartmentFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
 
-  const countriesCount = useMemo(
-    () => new Set(employees.map((employee) => employee.country)).size,
-    [employees]
-  );
-  const departmentsCount = useMemo(
-    () => new Set(employees.map((employee) => employee.department)).size,
-    [employees]
-  );
-  const departmentOptions = useMemo(
-    () => Array.from(new Set(employees.map((employee) => employee.department))).sort(),
-    [employees]
-  );
-  const statusOptions = useMemo(
-    () => Array.from(new Set(employees.map((employee) => employee.status))).sort(),
-    [employees]
-  );
-  const filteredEmployees = useMemo(() => {
-    const term = searchTerm.trim().toLowerCase();
-    return employees.filter((employee) => {
-      const matchesSearch = term.length === 0
-        || employee.fullName.toLowerCase().includes(term)
-        || employee.employeeCode.toLowerCase().includes(term)
-        || employee.jobTitle.toLowerCase().includes(term)
-        || employee.country.toLowerCase().includes(term);
-      const matchesDepartment = selectedDepartment === "all" || employee.department === selectedDepartment;
-      const matchesStatus = selectedStatus === "all" || employee.status === selectedStatus;
-      return matchesSearch && matchesDepartment && matchesStatus;
-    });
-  }, [employees, searchTerm, selectedDepartment, selectedStatus]);
-  const totalPages = Math.max(1, Math.ceil(filteredEmployees.length / pageSize));
-  const safeCurrentPage = Math.min(currentPage, totalPages);
-  const paginatedEmployees = useMemo(() => {
-    const start = (safeCurrentPage - 1) * pageSize;
-    return filteredEmployees.slice(start, start + pageSize);
-  }, [filteredEmployees, safeCurrentPage]);
+  const [modalMode, setModalMode] = useState<ModalMode>(null);
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [formValues, setFormValues] = useState<EmployeeFormValues>(EMPTY_EMPLOYEE_FORM);
+
+  const loadEmployees = useCallback(async (): Promise<void> => {
+    setLoading(true);
+    setError("");
+    try {
+      const data = await gqlRequest<{ employeesPage: EmployeeListPage }>(
+        `query EmployeesPage($input: EmployeeListInput) {
+          employeesPage(input: $input) {
+            totalCount
+            page
+            pageSize
+            totalPages
+            items {
+              id
+              fullName
+              email
+              employeeCode
+              jobTitle
+              department
+              country
+              salary
+              currency
+              dateOfJoining
+              employmentType
+              status
+              managerName
+              isActive
+            }
+          }
+        }`,
+        {
+          input: {
+            search: searchTerm.trim() || undefined,
+            department: departmentFilter.trim() || undefined,
+            status: statusFilter === "all" ? undefined : statusFilter,
+            page: currentPage,
+            pageSize
+          }
+        }
+      );
+      setPageData(data.employeesPage);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load employees");
+    } finally {
+      setLoading(false);
+    }
+  }, [searchTerm, departmentFilter, statusFilter, currentPage]);
 
   useEffect(() => {
     if (!isAuthenticated) {
       router.replace("/login");
       return;
     }
-    void loadEmployees();
-  }, [isAuthenticated, router]);
+    const timer = window.setTimeout(() => {
+      void loadEmployees();
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [isAuthenticated, router, loadEmployees]);
 
-  async function loadEmployees(): Promise<void> {
-    setLoadingEmployees(true);
+  function openCreate(): void {
+    setFormValues(EMPTY_EMPLOYEE_FORM);
+    setSelectedEmployee(null);
+    setModalMode("create");
+  }
+
+  function openView(employee: Employee): void {
+    setSelectedEmployee(employee);
+    setModalMode("view");
+  }
+
+  function openEdit(employee: Employee): void {
+    setSelectedEmployee(employee);
+    setFormValues(employeeToForm(employee));
+    setModalMode("edit");
+  }
+
+  function closeModal(): void {
+    setModalMode(null);
+    setSelectedEmployee(null);
+  }
+
+  async function handleCreate(): Promise<void> {
+    setSaving(true);
     setError("");
     try {
-      const data = await gqlRequest<{ employees: Employee[] }>(
-        `query Employees {
-          employees {
-            id
-            fullName
-            employeeCode
-            jobTitle
-            department
-            country
-            salary
-            currency
-            status
+      await gqlRequest(
+        `mutation CreateEmployee($input: CreateEmployeeInput!) {
+          createEmployee(input: $input) { id }
+        }`,
+        {
+          input: {
+            ...formValues,
+            dateOfJoining: new Date(formValues.dateOfJoining).toISOString(),
+            managerName: formValues.managerName || undefined
           }
-        }`
+        }
       );
-      setEmployees(data.employees);
+      closeModal();
+      setCurrentPage(1);
+      await loadEmployees();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load employees");
+      setError(err instanceof Error ? err.message : "Failed to create employee");
     } finally {
-      setLoadingEmployees(false);
+      setSaving(false);
     }
   }
 
-  async function handleLogout(): Promise<void> {
-    try {
-      await gqlRequest<{ logout: boolean }>("mutation { logout }");
-    } catch {
-      // best effort
+  async function handleUpdate(): Promise<void> {
+    if (!selectedEmployee) {
+      return;
     }
-    resetAuth();
-    router.push("/login");
+    setSaving(true);
+    setError("");
+    try {
+      await gqlRequest(
+        `mutation UpdateEmployee($input: UpdateEmployeeInput!) {
+          updateEmployee(input: $input) { id }
+        }`,
+        {
+          input: {
+            id: selectedEmployee.id,
+            fullName: formValues.fullName,
+            email: formValues.email,
+            jobTitle: formValues.jobTitle,
+            department: formValues.department,
+            country: formValues.country,
+            salary: formValues.salary,
+            currency: formValues.currency,
+            dateOfJoining: new Date(formValues.dateOfJoining).toISOString(),
+            employmentType: formValues.employmentType,
+            status: formValues.status,
+            managerName: formValues.managerName || undefined,
+            isActive: formValues.status === "active"
+          }
+        }
+      );
+      closeModal();
+      await loadEmployees();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update employee");
+    } finally {
+      setSaving(false);
+    }
   }
+
+  async function handleDelete(employee: Employee): Promise<void> {
+    const confirmed = window.confirm(`Delete ${employee.fullName}? This cannot be undone.`);
+    if (!confirmed) {
+      return;
+    }
+    setError("");
+    try {
+      await gqlRequest<{ deleteEmployee: boolean }>(
+        `mutation DeleteEmployee($id: String!) { deleteEmployee(id: $id) }`,
+        { id: employee.id }
+      );
+      await loadEmployees();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete employee");
+    }
+  }
+
+  const items = pageData?.items ?? [];
 
   return (
-    <main className="container">
-      <header className="hero">
-        <div>
-          <p className="badge">PayrollPilot HR</p>
-          <h1>Employees</h1>
-          <p className="subtitle">Manage your workforce records and current status.</p>
-        </div>
-      </header>
-
-      <nav className="tabs">
-        <Link href="/employees" className="tab active">Employees</Link>
-        <Link href="/insights" className="tab">Insights</Link>
-      </nav>
-
+    <AppShell title="Employees" subtitle="Create, view, update, and delete workforce records stored in PostgreSQL.">
       <section className="dashboard">
         <div className="statsGrid">
           <article className="statCard">
-            <p>Total Employees</p>
-            <h3>{employees.length}</h3>
+            <p>Total employees</p>
+            <h3>{pageData?.totalCount ?? 0}</h3>
           </article>
           <article className="statCard">
-            <p>Active Countries</p>
-            <h3>{countriesCount}</h3>
+            <p>Current page</p>
+            <h3>{pageData?.page ?? 1}</h3>
           </article>
           <article className="statCard">
-            <p>Departments</p>
-            <h3>{departmentsCount}</h3>
+            <p>Page size</p>
+            <h3>{pageData?.pageSize ?? pageSize}</h3>
           </article>
         </div>
 
         <section className="card">
           <div className="row">
             <div>
-              <h2>Employee Directory</h2>
-              <p className="muted">Live data fetched from your GraphQL backend.</p>
+              <h2>Employee directory</h2>
+              <p className="muted">Data is loaded from PostgreSQL via GraphQL (Redis is used only for sessions).</p>
             </div>
-            <div>
-              <button onClick={loadEmployees}>{loadingEmployees ? "Refreshing..." : "Refresh"}</button>
-              <button onClick={handleLogout} className="secondary">Logout</button>
+            <div className="actionRow">
+              <button type="button" onClick={openCreate}>+ Add employee</button>
+              <button type="button" className="secondary" onClick={loadEmployees} disabled={loading}>
+                {loading ? "Refreshing..." : "Refresh"}
+              </button>
             </div>
           </div>
+
           <div className="filtersRow">
             <input
-              placeholder="Search by name, code, title, country"
+              placeholder="Search name, code, title, country"
               value={searchTerm}
-              onChange={(event) => {
-                setSearchTerm(event.target.value);
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
                 setCurrentPage(1);
               }}
             />
-            <select value={selectedDepartment} onChange={(event) => {
-              setSelectedDepartment(event.target.value);
-              setCurrentPage(1);
-            }}>
-              <option value="all">All Departments</option>
-              {departmentOptions.map((department) => (
-                <option key={department} value={department}>{department}</option>
-              ))}
-            </select>
-            <select value={selectedStatus} onChange={(event) => {
-              setSelectedStatus(event.target.value);
-              setCurrentPage(1);
-            }}>
-              <option value="all">All Statuses</option>
-              {statusOptions.map((status) => (
-                <option key={status} value={status}>{status}</option>
-              ))}
+            <input
+              placeholder="Department filter"
+              value={departmentFilter}
+              onChange={(e) => {
+                setDepartmentFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+            />
+            <select
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+            >
+              <option value="all">All statuses</option>
+              <option value="active">Active</option>
+              <option value="on_leave">On leave</option>
+              <option value="exited">Exited</option>
             </select>
           </div>
-          <p className="muted">
-            Showing {paginatedEmployees.length} of {filteredEmployees.length} matching records (total {employees.length})
-          </p>
+
           {error ? <p className="error">{error}</p> : null}
+          <p className="muted">
+            Showing {items.length} of {pageData?.totalCount ?? 0} records
+          </p>
+
           <div className="tableWrap">
             <table>
               <thead>
@@ -205,10 +293,11 @@ export default function EmployeesPage() {
                   <th>Country</th>
                   <th>Salary</th>
                   <th>Status</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {paginatedEmployees.map((employee) => (
+                {items.map((employee) => (
                   <tr key={employee.id}>
                     <td>{employee.fullName}</td>
                     <td>{employee.employeeCode}</td>
@@ -219,29 +308,94 @@ export default function EmployeesPage() {
                     <td>
                       <span className={`status ${employee.status.toLowerCase()}`}>{employee.status}</span>
                     </td>
+                    <td className="tableActions">
+                      <button type="button" className="ghost" onClick={() => openView(employee)}>View</button>
+                      <button type="button" className="ghost" onClick={() => openEdit(employee)}>Edit</button>
+                      <button type="button" className="ghost dangerText" onClick={() => void handleDelete(employee)}>
+                        Delete
+                      </button>
+                    </td>
                   </tr>
                 ))}
+                {!loading && items.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="muted">No employees found for current filters.</td>
+                  </tr>
+                ) : null}
               </tbody>
             </table>
           </div>
+
           <div className="paginationRow">
             <button
+              type="button"
               className="secondary"
-              onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-              disabled={safeCurrentPage === 1}
+              disabled={(pageData?.page ?? 1) <= 1}
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
             >
               Previous
             </button>
-            <span className="muted">Page {safeCurrentPage} of {totalPages}</span>
+            <span className="muted">
+              Page {pageData?.page ?? 1} of {pageData?.totalPages ?? 1}
+            </span>
             <button
-              onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
-              disabled={safeCurrentPage === totalPages}
+              type="button"
+              disabled={(pageData?.page ?? 1) >= (pageData?.totalPages ?? 1)}
+              onClick={() => setCurrentPage((p) => p + 1)}
             >
               Next
             </button>
           </div>
         </section>
       </section>
-    </main>
+
+      {modalMode === "create" ? (
+        <Modal title="Add employee" onClose={closeModal} wide>
+          <EmployeeForm
+            values={formValues}
+            onChange={setFormValues}
+            onSubmit={handleCreate}
+            onCancel={closeModal}
+            submitLabel="Create employee"
+            loading={saving}
+          />
+        </Modal>
+      ) : null}
+
+      {modalMode === "edit" ? (
+        <Modal title="Edit employee" onClose={closeModal} wide>
+          <EmployeeForm
+            values={formValues}
+            onChange={setFormValues}
+            onSubmit={handleUpdate}
+            onCancel={closeModal}
+            submitLabel="Save changes"
+            loading={saving}
+          />
+        </Modal>
+      ) : null}
+
+      {modalMode === "view" && selectedEmployee ? (
+        <Modal title="Employee details" onClose={closeModal}>
+          <dl className="detailList">
+            <div><dt>Name</dt><dd>{selectedEmployee.fullName}</dd></div>
+            <div><dt>Email</dt><dd>{selectedEmployee.email}</dd></div>
+            <div><dt>Employee code</dt><dd>{selectedEmployee.employeeCode}</dd></div>
+            <div><dt>Job title</dt><dd>{selectedEmployee.jobTitle}</dd></div>
+            <div><dt>Department</dt><dd>{selectedEmployee.department}</dd></div>
+            <div><dt>Country</dt><dd>{selectedEmployee.country}</dd></div>
+            <div><dt>Salary</dt><dd>{formatCurrency(selectedEmployee.salary, selectedEmployee.currency)}</dd></div>
+            <div><dt>Joined</dt><dd>{formatDate(selectedEmployee.dateOfJoining)}</dd></div>
+            <div><dt>Employment</dt><dd>{selectedEmployee.employmentType}</dd></div>
+            <div><dt>Status</dt><dd>{selectedEmployee.status}</dd></div>
+            <div><dt>Manager</dt><dd>{selectedEmployee.managerName || "—"}</dd></div>
+          </dl>
+          <div className="formActions">
+            <button type="button" className="secondary" onClick={closeModal}>Close</button>
+            <button type="button" onClick={() => openEdit(selectedEmployee)}>Edit</button>
+          </div>
+        </Modal>
+      ) : null}
+    </AppShell>
   );
 }

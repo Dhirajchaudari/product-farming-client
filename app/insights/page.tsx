@@ -1,25 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+import { AppShell } from "@/components/AppShell";
 import { gqlRequest } from "@/lib/graphql";
+import { formatCurrency } from "@/lib/format";
 import { useAuthStore } from "@/store/auth.store";
 
 interface CountryInsight {
   country: string;
   employeeCount: number;
   averageSalary: number;
-  currency: string;
-}
-
-function formatCurrency(amount: number, currency: string): string {
-  try {
-    return new Intl.NumberFormat("en-IN", { style: "currency", currency, maximumFractionDigits: 0 }).format(amount);
-  } catch {
-    return `${amount} ${currency}`;
-  }
+  minimumSalary: number;
+  maximumSalary: number;
 }
 
 export default function InsightsPage() {
@@ -46,7 +40,8 @@ export default function InsightsPage() {
             country
             employeeCount
             averageSalary
-            currency
+            minimumSalary
+            maximumSalary
           }
         }`,
         { country }
@@ -61,31 +56,14 @@ export default function InsightsPage() {
   }
 
   return (
-    <main className="container">
-      <header className="hero">
-        <div>
-          <p className="badge">PayrollPilot HR</p>
-          <h1>Salary Insights</h1>
-          <p className="subtitle">Analyze compensation benchmarks by country.</p>
-        </div>
-      </header>
-
-      <nav className="tabs">
-        <Link href="/employees" className="tab">Employees</Link>
-        <Link href="/insights" className="tab active">Insights</Link>
-      </nav>
-
+    <AppShell title="Salary insights" subtitle="Compensation analytics computed from PostgreSQL employee data.">
       <section className="card">
-        <div className="row">
-          <div>
-            <h2>Country Salary Overview</h2>
-            <p className="muted">Pull aggregated salary stats by country.</p>
-          </div>
-        </div>
+        <h2>Country salary overview</h2>
+        <p className="muted">Pull aggregated salary stats by country.</p>
         <label htmlFor="country">Country</label>
         <input id="country" value={country} onChange={(event) => setCountry(event.target.value)} />
-        <button onClick={loadInsight} disabled={loading}>
-          {loading ? "Loading..." : "Load Insight"}
+        <button type="button" onClick={loadInsight} disabled={loading}>
+          {loading ? "Loading..." : "Load insight"}
         </button>
         {error ? <p className="error">{error}</p> : null}
         {insight ? (
@@ -99,12 +77,18 @@ export default function InsightsPage() {
               <h3>{insight.employeeCount}</h3>
             </article>
             <article className="statCard">
-              <p>Average Salary</p>
-              <h3>{formatCurrency(insight.averageSalary, insight.currency)}</h3>
+              <p>Average salary</p>
+              <h3>{formatCurrency(insight.averageSalary, "INR")}</h3>
+            </article>
+            <article className="statCard">
+              <p>Min / Max</p>
+              <h3>
+                {formatCurrency(insight.minimumSalary, "INR")} – {formatCurrency(insight.maximumSalary, "INR")}
+              </h3>
             </article>
           </div>
         ) : null}
       </section>
-    </main>
+    </AppShell>
   );
 }
