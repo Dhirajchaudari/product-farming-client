@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { PageLoader } from "@/components/PageLoader";
+import { PayrollPilotLogo } from "@/components/PayrollPilotLogo";
 import { UserAvatar } from "@/components/UserAvatar";
 import { PayslipList } from "@/components/PayslipList";
 import { gqlRequest } from "@/lib/graphql";
@@ -79,7 +80,7 @@ export default function PortalPage() {
     <div className="portalShell">
       <header className="portalTopbar">
         <div className="portalTopbarBrand">
-          <span className="brandMark">PP</span>
+          <PayrollPilotLogo size="md" />
           <div>
             <p className="brandTitle">PayrollPilot</p>
             <p className="brandSub">Employee workspace</p>

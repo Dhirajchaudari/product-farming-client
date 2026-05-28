@@ -3,6 +3,8 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { LoginAuthCard } from "@/components/LoginAuthCard";
+import { PayrollPilotLogo } from "@/components/PayrollPilotLogo";
 import { LoginHeroPanel } from "@/components/LoginHeroPanel";
 import { PageLoader } from "@/components/PageLoader";
 import { gqlRequest } from "@/lib/graphql";
@@ -80,15 +82,22 @@ export default function LoginPage() {
       </aside>
 
       <main className="loginPanel loginAnimRight">
-        <div className="loginPanelInner">
-          <div className="loginPanelBrandMobile">
-            <span className="brandMark">PP</span>
-            <span>PayrollPilot</span>
-          </div>
-          <h2>Sign in</h2>
+        <div className="loginPanelBrandMobile">
+          <PayrollPilotLogo size="sm" />
+          <span>PayrollPilot</span>
+        </div>
 
-          <form className="loginForm loginFormMinimal" onSubmit={handleLogin}>
-            <label htmlFor="email">Email</label>
+        <LoginAuthCard
+          title="Sign in"
+          subtitle="Use your work email. HR and employees share this page."
+          footer={
+            <p className="loginAuthHint">
+              New employee? Open the setup link from your welcome email.
+            </p>
+          }
+        >
+          <form className="loginForm loginFormCard" onSubmit={handleLogin}>
+            <label htmlFor="email">Email address</label>
             <div className="inputWithIcon">
               <MailIcon />
               <input
@@ -108,7 +117,7 @@ export default function LoginPage() {
                 id="password"
                 type="password"
                 autoComplete="current-password"
-                placeholder="••••••••"
+                placeholder="Enter your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -121,11 +130,11 @@ export default function LoginPage() {
                   Signing in...
                 </span>
               ) : (
-                "Sign in"
+                "Continue to dashboard"
               )}
             </button>
           </form>
-        </div>
+        </LoginAuthCard>
       </main>
     </div>
   );

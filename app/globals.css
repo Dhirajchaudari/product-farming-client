@@ -236,23 +236,33 @@ button.fullWidth {
   margin-top: 16px;
 }
 
-.loginTechStack {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 24px;
+.loginHighlightGrid {
+  margin-top: 32px;
+  display: grid;
+  gap: 14px;
 }
 
-.loginTechTag {
-  font-size: 11px;
+.loginHighlightCard {
+  padding: 16px 18px;
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(8px);
+}
+
+.loginHighlightCard h3 {
+  font-size: 1rem;
   font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  padding: 6px 10px;
-  border-radius: 999px;
-  border: 1px solid rgba(148, 163, 184, 0.35);
-  background: rgba(15, 23, 42, 0.55);
+  color: #f8fafc;
+  margin-bottom: 6px;
+}
+
+.loginHighlightCard p {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
   color: #cbd5e1;
+  max-width: none;
 }
 
 .loginHeroContent h1 {
@@ -270,33 +280,146 @@ button.fullWidth {
 
 .loginPanel {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: clamp(32px, 5vw, 64px);
+  gap: 20px;
+  padding: clamp(28px, 5vw, 56px);
   background:
-    radial-gradient(circle at 80% 10%, rgba(79, 140, 255, 0.12), transparent 45%),
-    linear-gradient(180deg, #0a1020 0%, #0d1528 100%);
+    radial-gradient(ellipse at 30% 0%, rgba(79, 140, 255, 0.14), transparent 50%),
+    radial-gradient(ellipse at 90% 80%, rgba(99, 102, 241, 0.1), transparent 40%),
+    #070b14;
   color: #f8fafc;
-  border-left: 1px solid var(--border);
+  border-left: 1px solid rgba(148, 163, 184, 0.12);
 }
 
-.loginPanelInner {
-  width: min(380px, 100%);
+.loginAuthCard {
+  width: min(420px, 100%);
+  padding: clamp(28px, 4vw, 36px);
+  border-radius: 20px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: rgba(15, 23, 42, 0.72);
+  backdrop-filter: blur(16px);
+  box-shadow:
+    0 24px 48px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.loginAuthCardHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 28px;
+  padding-bottom: 22px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+}
+
+.loginAuthCardIcon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  color: #93c5fd;
+  background: linear-gradient(145deg, rgba(79, 140, 255, 0.25), rgba(99, 102, 241, 0.15));
+  border: 1px solid rgba(147, 197, 253, 0.25);
+}
+
+.loginAuthCardHeader h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #f8fafc;
+  margin: 0;
+}
+
+.loginAuthCardSubtitle {
+  margin-top: 6px;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: #94a3b8;
+}
+
+.loginAuthCardBody {
+  display: grid;
+  gap: 0;
+}
+
+.loginAuthCardFooter {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.loginAuthHint {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.loginAuthHint a {
+  color: #93c5fd;
+  font-weight: 500;
 }
 
 .loginPanelBrandMobile {
   display: none;
   align-items: center;
   gap: 10px;
-  margin-bottom: 20px;
   font-weight: 600;
   color: #f8fafc;
 }
 
-.loginPanel h2 {
-  font-size: 1.85rem;
+.loginFormCard {
+  margin-top: 0;
+  gap: 6px;
+}
+
+.loginFormCard label {
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 500;
+  margin-top: 14px;
+}
+
+.loginFormCard label:first-of-type {
+  margin-top: 0;
+}
+
+.loginAuthCard .loginFormCard input {
+  width: 100%;
+  margin-top: 6px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(6, 10, 20, 0.65);
+  border: 1px solid rgba(148, 163, 184, 0.22);
   color: #f8fafc;
-  margin-bottom: 24px;
+  font-size: 15px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.loginAuthCard .loginFormCard input::placeholder {
+  color: #64748b;
+}
+
+.loginAuthCard .loginFormCard input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--ring);
+}
+
+.loginAuthCard .inputWithIcon input {
+  padding-left: 40px !important;
+}
+
+.loginAuthCard .primaryBtn {
+  margin-top: 22px;
+  padding: 13px 16px;
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: 10px;
 }
 
 .loginFormMinimal {
@@ -634,11 +757,19 @@ button.fullWidth {
   animation: loginPulse 3s ease-in-out infinite;
 }
 
-.brandMarkLarge {
-  width: auto;
-  height: auto;
-  background: transparent;
-  font-size: 1.1rem;
+.brandLogo {
+  display: inline-flex;
+  flex-shrink: 0;
+  line-height: 0;
+}
+
+.brandLogoLarge {
+  margin-bottom: 4px;
+}
+
+.brandLogo svg {
+  display: block;
+  filter: drop-shadow(0 8px 24px rgba(59, 130, 246, 0.35));
 }
 
 .loginOrb {
@@ -1061,17 +1192,6 @@ button.fullWidth {
   padding: 8px 10px;
 }
 
-.brandMark {
-  width: 42px;
-  height: 42px;
-  border-radius: 12px;
-  display: grid;
-  place-items: center;
-  background: linear-gradient(135deg, #3b82f6, #6366f1);
-  font-weight: 700;
-  font-size: 13px;
-  flex-shrink: 0;
-}
 
 .brandTitle {
   font-weight: 700;

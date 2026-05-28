@@ -1,58 +1,61 @@
+import { PayrollPilotLogo } from "@/components/PayrollPilotLogo";
+
 interface LoginHeroPanelProps {
   variant?: "login" | "setup";
 }
 
-const FEATURES = [
-  "Server-side search, filters, and pagination via GraphQL.",
-  "PostgreSQL + Prisma for reliable employee and payroll records.",
-  "Role-based access for HR admins and employee self-service.",
-  "Payslip PDF generation with secure Cloudinary delivery.",
-  "Async email onboarding via BullMQ workers.",
+const LOGIN_HIGHLIGHTS = [
+  {
+    title: "One place for your team",
+    description: "Manage employee records, departments, and employment status from a single directory."
+  },
+  {
+    title: "Payroll you can trust",
+    description: "Track salaries, generate payslips, and give employees secure access to their documents."
+  },
+  {
+    title: "Built for HR & employees",
+    description: "HR runs the console; employees sign in to view profile details and download salary slips."
+  }
 ] as const;
 
-const STACK = ["Next.js", "GraphQL", "PostgreSQL", "Prisma", "Redis", "Cloudinary"] as const;
+const SETUP_HIGHLIGHTS = [
+  {
+    title: "Your employee account",
+    description: "Use the email from your welcome message to activate access to PayrollPilot."
+  },
+  {
+    title: "Payslips at your fingertips",
+    description: "Download PDF salary slips for each pay period after you sign in."
+  },
+  {
+    title: "Profile always up to date",
+    description: "View job title, department, and employment details in your personal workspace."
+  }
+] as const;
 
 export function LoginHeroPanel({ variant = "login" }: LoginHeroPanelProps) {
   const isSetup = variant === "setup";
+  const highlights = isSetup ? SETUP_HIGHLIGHTS : LOGIN_HIGHLIGHTS;
 
   return (
     <div className="loginHeroContent">
-      <span className="brandMark brandMarkLarge">PP</span>
-      <p className="loginEyebrow">PayrollPilot platform</p>
+      <PayrollPilotLogo size="lg" />
+      <p className="loginEyebrow">{isSetup ? "Employee onboarding" : "Workforce platform"}</p>
       <h1>{isSetup ? "Welcome aboard" : "PayrollPilot"}</h1>
       <p className="loginLead">
         {isSetup
-          ? "Create your password to access payslips and your employee profile."
+          ? "Set your password to unlock your employee workspace."
           : "Modern payroll & workforce management for growing teams."}
       </p>
 
-      <ul className="loginFeatureList">
-        {FEATURES.map((item) => (
-          <li key={item}>{item}</li>
+      <div className="loginHighlightGrid">
+        {highlights.map((item) => (
+          <article key={item.title} className="loginHighlightCard">
+            <h3>{item.title}</h3>
+            <p>{item.description}</p>
+          </article>
         ))}
-      </ul>
-
-      <div className="loginTechStack" aria-label="Technology stack">
-        {STACK.map((tag) => (
-          <span key={tag} className="loginTechTag">
-            {tag}
-          </span>
-        ))}
-      </div>
-
-      <div className="loginStats">
-        <div>
-          <strong>GraphQL</strong>
-          <span>Typed API layer</span>
-        </div>
-        <div>
-          <strong>Prisma</strong>
-          <span>Data modeling</span>
-        </div>
-        <div>
-          <strong>RBAC</strong>
-          <span>HR & employee roles</span>
-        </div>
       </div>
     </div>
   );

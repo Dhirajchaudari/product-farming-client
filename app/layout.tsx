@@ -18,8 +18,13 @@ const sourceSerif = Source_Serif_4({
 });
 
 export const metadata: Metadata = {
-  title: "PayrollPilot HR",
-  description: "Salary intelligence and workforce management",
+  title: "PayrollPilot",
+  description: "Modern payroll and workforce management",
+  applicationName: "PayrollPilot",
+  icons: {
+    icon: [{ url: "/icon", type: "image/png" }],
+    apple: [{ url: "/apple-icon", type: "image/png" }]
+  }
 };
 
 export default function RootLayout({

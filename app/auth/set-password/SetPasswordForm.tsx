@@ -4,6 +4,8 @@ import { FormEvent, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
+import { LoginAuthCard } from "@/components/LoginAuthCard";
+import { PayrollPilotLogo } from "@/components/PayrollPilotLogo";
 import { LoginHeroPanel } from "@/components/LoginHeroPanel";
 import { gqlRequest } from "@/lib/graphql";
 import { useToastStore } from "@/store/toast.store";
@@ -61,14 +63,24 @@ export default function SetPasswordForm() {
       </aside>
 
       <main className="loginPanel loginAnimRight">
-        <div className="loginPanelInner">
-          <p className="badge">Employee setup</p>
-          <h2>Create password</h2>
+        <div className="loginPanelBrandMobile">
+          <PayrollPilotLogo size="sm" />
+          <span>PayrollPilot</span>
+        </div>
 
+        <LoginAuthCard
+          title="Create password"
+          subtitle="Finish activating your employee account."
+          footer={
+            <p className="loginAuthHint muted small">
+              Already set up? <Link href="/login">Sign in</Link>
+            </p>
+          }
+        >
           {!hasInviteParams ? (
             <p className="error">Invalid setup link. Please use the full URL from your welcome email.</p>
           ) : (
-            <form className="loginForm loginFormMinimal" onSubmit={handleSubmit}>
+            <form className="loginForm loginFormCard" onSubmit={handleSubmit}>
               <label htmlFor="email">Work email</label>
               <input id="email" type="email" value={email} readOnly className="inputReadonly" />
               <label htmlFor="password">New password</label>
@@ -91,7 +103,7 @@ export default function SetPasswordForm() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
               />
-              <button type="submit" className="fullWidth primaryBtn" disabled={loading}>
+              <button type="submit" className="fullWidth primaryBtn loginSubmitBtn" disabled={loading}>
                 {loading ? (
                   <span className="btnLoading">
                     <span className="spinner" />
@@ -103,11 +115,7 @@ export default function SetPasswordForm() {
               </button>
             </form>
           )}
-
-          <p className="loginFootnote muted small">
-            Already set up? <Link href="/login">Sign in</Link>
-          </p>
-        </div>
+        </LoginAuthCard>
       </main>
     </div>
   );

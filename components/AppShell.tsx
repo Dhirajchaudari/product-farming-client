@@ -4,6 +4,7 @@ import { useEffect, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
+import { PayrollPilotLogo } from "@/components/PayrollPilotLogo";
 import { UserAvatar } from "@/components/UserAvatar";
 import { gqlRequest } from "@/lib/graphql";
 import { useAuthStore } from "@/store/auth.store";
@@ -74,7 +75,7 @@ export function AppShell({ title, subtitle, children }: AppShellProps) {
     <div className="appShell">
       <aside className="sidebar">
         <div className="brandBlock">
-          <div className="brandMark">PP</div>
+          <PayrollPilotLogo size="md" />
           <div>
             <p className="brandTitle">PayrollPilot</p>
             <p className="brandSub">HR Console</p>
