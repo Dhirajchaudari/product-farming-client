@@ -279,77 +279,78 @@ button.fullWidth {
 }
 
 .loginPanel {
+  position: relative;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  gap: 20px;
-  padding: clamp(28px, 5vw, 56px);
+  gap: 0;
+  padding: clamp(40px, 6vw, 80px) clamp(32px, 8vw, 96px);
+  overflow: hidden;
   background:
-    radial-gradient(ellipse at 30% 0%, rgba(79, 140, 255, 0.14), transparent 50%),
-    radial-gradient(ellipse at 90% 80%, rgba(99, 102, 241, 0.1), transparent 40%),
+    radial-gradient(ellipse at 20% 0%, rgba(79, 140, 255, 0.16), transparent 55%),
+    radial-gradient(ellipse at 100% 100%, rgba(99, 102, 241, 0.12), transparent 45%),
     #070b14;
   color: #f8fafc;
-  border-left: 1px solid rgba(148, 163, 184, 0.12);
+  border-left: 1px solid rgba(148, 163, 184, 0.1);
 }
 
-.loginAuthCard {
-  width: min(420px, 100%);
-  padding: clamp(28px, 4vw, 36px);
-  border-radius: 20px;
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  background: rgba(15, 23, 42, 0.72);
-  backdrop-filter: blur(16px);
-  box-shadow:
-    0 24px 48px rgba(0, 0, 0, 0.35),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+.loginPanel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.4;
+  background-image:
+    linear-gradient(rgba(148, 163, 184, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+  mask-image: radial-gradient(ellipse at 30% 40%, #000 0%, transparent 70%);
+  pointer-events: none;
 }
 
-.loginAuthCardHeader {
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  margin-bottom: 28px;
-  padding-bottom: 22px;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+.loginAuthPanel {
+  position: relative;
+  z-index: 1;
+  width: min(400px, 100%);
 }
 
-.loginAuthCardIcon {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
+.loginAuthPanelHeader {
+  margin-bottom: 36px;
+}
+
+.loginAuthPanelEyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
   color: #93c5fd;
-  background: linear-gradient(145deg, rgba(79, 140, 255, 0.25), rgba(99, 102, 241, 0.15));
-  border: 1px solid rgba(147, 197, 253, 0.25);
+  margin-bottom: 12px;
 }
 
-.loginAuthCardHeader h2 {
-  font-size: 1.5rem;
+.loginAuthPanelHeader h2 {
+  font-size: clamp(2rem, 4vw, 2.5rem);
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
   color: #f8fafc;
   margin: 0;
 }
 
-.loginAuthCardSubtitle {
-  margin-top: 6px;
-  font-size: 0.9rem;
-  line-height: 1.45;
+.loginAuthPanelSubtitle {
+  margin-top: 10px;
+  font-size: 1rem;
+  line-height: 1.55;
   color: #94a3b8;
+  max-width: 36ch;
 }
 
-.loginAuthCardBody {
+.loginAuthPanelBody {
   display: grid;
   gap: 0;
 }
 
-.loginAuthCardFooter {
-  margin-top: 22px;
-  padding-top: 18px;
-  border-top: 1px solid rgba(148, 163, 184, 0.12);
+.loginAuthPanelFooter {
+  margin-top: 28px;
 }
 
 .loginAuthHint {
@@ -364,12 +365,30 @@ button.fullWidth {
   font-weight: 500;
 }
 
+.loginPanelTopBrand {
+  position: absolute;
+  top: clamp(24px, 4vw, 40px);
+  left: clamp(32px, 8vw, 96px);
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.loginPanelTopBrandName {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #f8fafc;
+  letter-spacing: -0.02em;
+}
+
 .loginPanelBrandMobile {
   display: none;
   align-items: center;
   gap: 10px;
   font-weight: 600;
   color: #f8fafc;
+  margin-bottom: 24px;
 }
 
 .loginFormCard {
@@ -388,38 +407,47 @@ button.fullWidth {
   margin-top: 0;
 }
 
-.loginAuthCard .loginFormCard input {
+.loginPanel .loginFormCard input {
   width: 100%;
-  margin-top: 6px;
-  padding: 12px 14px;
-  border-radius: 10px;
-  background: rgba(6, 10, 20, 0.65);
-  border: 1px solid rgba(148, 163, 184, 0.22);
+  margin-top: 8px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(148, 163, 184, 0.2);
   color: #f8fafc;
   font-size: 15px;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease;
 }
 
-.loginAuthCard .loginFormCard input::placeholder {
+.loginPanel .loginFormCard input::placeholder {
   color: #64748b;
 }
 
-.loginAuthCard .loginFormCard input:focus {
+.loginPanel .loginFormCard input:hover {
+  border-color: rgba(148, 163, 184, 0.35);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.loginPanel .loginFormCard input:focus {
   outline: none;
   border-color: var(--primary);
+  background: rgba(255, 255, 255, 0.06);
   box-shadow: 0 0 0 3px var(--ring);
 }
 
-.loginAuthCard .inputWithIcon input {
-  padding-left: 40px !important;
+.loginPanel .inputWithIcon input {
+  padding-left: 44px !important;
 }
 
-.loginAuthCard .primaryBtn {
-  margin-top: 22px;
-  padding: 13px 16px;
+.loginPanel .primaryBtn {
+  margin-top: 28px;
+  padding: 14px 18px;
   font-size: 15px;
   font-weight: 600;
-  border-radius: 10px;
+  border-radius: 12px;
 }
 
 .loginFormMinimal {
@@ -1998,7 +2026,12 @@ button.dangerBtn:hover:not(:disabled) {
   }
 
   .loginPanel {
+    align-items: stretch;
     padding: 32px 24px 48px;
+  }
+
+  .loginPanelTopBrand {
+    display: none;
   }
 
   .loginPanelBrandMobile,

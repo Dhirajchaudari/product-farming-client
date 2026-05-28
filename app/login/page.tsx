@@ -82,6 +82,11 @@ export default function LoginPage() {
       </aside>
 
       <main className="loginPanel loginAnimRight">
+        <div className="loginPanelTopBrand">
+          <PayrollPilotLogo size="md" />
+          <span className="loginPanelTopBrandName">PayrollPilot</span>
+        </div>
+
         <div className="loginPanelBrandMobile">
           <PayrollPilotLogo size="sm" />
           <span>PayrollPilot</span>
