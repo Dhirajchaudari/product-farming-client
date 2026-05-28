@@ -21,7 +21,7 @@ export function PayslipList({
   async function handleDownload(payslip: Payslip): Promise<void> {
     setDownloadingId(payslip.id);
     try {
-      await downloadPayslip(payslip.id);
+      await downloadPayslip(payslip.id, payslip.fileName);
       pushToast(`Downloading ${payslip.periodLabel} payslip.`, "success");
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to download payslip";
