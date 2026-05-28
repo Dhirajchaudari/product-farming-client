@@ -63,12 +63,13 @@ export default function SetPasswordForm() {
       </aside>
 
       <main className="loginPanel loginAnimRight">
-        <div className="loginPanelBrandMobile">
-          <PayrollPilotLogo size="sm" />
-          <span>PayrollPilot</span>
-        </div>
+        <div className="loginPanelInner">
+          <div className="loginPanelBrandMobile">
+            <PayrollPilotLogo size="sm" />
+            <span>PayrollPilot</span>
+          </div>
 
-        <LoginAuthCard
+          <LoginAuthCard
           title="Create password"
           subtitle="Finish activating your employee account."
           footer={
@@ -115,7 +116,8 @@ export default function SetPasswordForm() {
               </button>
             </form>
           )}
-        </LoginAuthCard>
+          </LoginAuthCard>
+        </div>
       </main>
     </div>
   );

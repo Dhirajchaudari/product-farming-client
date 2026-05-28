@@ -82,12 +82,13 @@ export default function LoginPage() {
       </aside>
 
       <main className="loginPanel loginAnimRight">
-        <div className="loginPanelBrandMobile">
-          <PayrollPilotLogo size="sm" />
-          <span>PayrollPilot</span>
-        </div>
+        <div className="loginPanelInner">
+          <div className="loginPanelBrandMobile">
+            <PayrollPilotLogo size="sm" />
+            <span>PayrollPilot</span>
+          </div>
 
-        <LoginAuthCard
+          <LoginAuthCard
           title="Sign in"
           subtitle="Use your work email. HR and employees share this page."
           footer={
@@ -134,7 +135,8 @@ export default function LoginPage() {
               )}
             </button>
           </form>
-        </LoginAuthCard>
+          </LoginAuthCard>
+        </div>
       </main>
     </div>
   );

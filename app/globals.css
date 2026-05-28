@@ -207,6 +207,7 @@ button.fullWidth {
   overflow: hidden;
   display: flex;
   align-items: center;
+  min-height: 100vh;
   padding: clamp(40px, 6vw, 72px);
   background-image: url("https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1600&q=80");
   background-size: cover;
@@ -281,11 +282,10 @@ button.fullWidth {
 .loginPanel {
   position: relative;
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
-  gap: 0;
-  padding: clamp(40px, 6vw, 80px) clamp(32px, 8vw, 96px);
+  min-height: 100vh;
+  padding: clamp(32px, 5vw, 48px);
   overflow: hidden;
   background:
     radial-gradient(ellipse at 20% 0%, rgba(79, 140, 255, 0.16), transparent 55%),
@@ -293,6 +293,13 @@ button.fullWidth {
     #070b14;
   color: #f8fafc;
   border-left: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+.loginPanelInner {
+  position: relative;
+  z-index: 1;
+  width: min(420px, 100%);
+  margin: 0 auto;
 }
 
 .loginPanel::before {
@@ -309,9 +316,7 @@ button.fullWidth {
 }
 
 .loginAuthPanel {
-  position: relative;
-  z-index: 1;
-  width: min(400px, 100%);
+  width: 100%;
 }
 
 .loginAuthPanelHeader {
@@ -2012,8 +2017,14 @@ button.dangerBtn:hover:not(:disabled) {
   }
 
   .loginPanel {
-    align-items: stretch;
+    min-height: auto;
+    align-items: flex-start;
+    justify-content: flex-start;
     padding: 32px 24px 48px;
+  }
+
+  .loginPanelInner {
+    width: 100%;
   }
 
   .loginPanelBrandMobile,
