@@ -19,7 +19,14 @@ export async function downloadPayslip(payslipId: string, fileName: string): Prom
   });
 
   if (!response.ok) {
-    throw new Error("Failed to download payslip. Try again or ask HR to regenerate your payslip.");
+    let detail = "Failed to download payslip.";
+    try {
+      const body = (await response.json()) as { message?: string; error?: string };
+      detail = body.message ?? body.error ?? detail;
+    } catch {
+      // ignore non-json body
+    }
+    throw new Error(detail);
   }
 
   const blob = await response.blob();
