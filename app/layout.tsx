@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Product Farming HR",
-  description: "Salary management frontend",
+  title: "PayrollPilot HR",
+  description: "Salary intelligence and workforce management",
 };
 
 export default function RootLayout({
