@@ -15,6 +15,7 @@ import {
   type EmployeeListPage
 } from "@/lib/types";
 import { useAuthStore } from "@/store/auth.store";
+import { useToastStore } from "@/store/toast.store";
 
 type ModalMode = "create" | "edit" | "view" | null;
 
@@ -37,6 +38,7 @@ function employeeToForm(employee: Employee): EmployeeFormValues {
 export default function EmployeesPage() {
   const router = useRouter();
   const { isAuthenticated } = useAuthStore();
+  const pushToast = useToastStore((state) => state.push);
   const [pageData, setPageData] = useState<EmployeeListPage | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -92,11 +94,13 @@ export default function EmployeesPage() {
       );
       setPageData(data.employeesPage);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load employees");
+      const message = err instanceof Error ? err.message : "Failed to load employees";
+      setError(message);
+      pushToast(message, "error");
     } finally {
       setLoading(false);
     }
-  }, [searchTerm, departmentFilter, statusFilter, currentPage]);
+  }, [searchTerm, departmentFilter, statusFilter, currentPage, pushToast]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -150,8 +154,11 @@ export default function EmployeesPage() {
       closeModal();
       setCurrentPage(1);
       await loadEmployees();
+      pushToast(`Employee added. Welcome email sent to ${formValues.email}.`, "success");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create employee");
+      const message = err instanceof Error ? err.message : "Failed to create employee";
+      setError(message);
+      pushToast(message, "error");
     } finally {
       setSaving(false);
     }
@@ -188,8 +195,11 @@ export default function EmployeesPage() {
       );
       closeModal();
       await loadEmployees();
+      pushToast("Employee updated successfully.", "success");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update employee");
+      const message = err instanceof Error ? err.message : "Failed to update employee";
+      setError(message);
+      pushToast(message, "error");
     } finally {
       setSaving(false);
     }
@@ -207,8 +217,11 @@ export default function EmployeesPage() {
         { id: employee.id }
       );
       await loadEmployees();
+      pushToast("Employee deleted.", "success");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete employee");
+      const message = err instanceof Error ? err.message : "Failed to delete employee";
+      setError(message);
+      pushToast(message, "error");
     }
   }
 
@@ -282,8 +295,8 @@ export default function EmployeesPage() {
             Showing {items.length} of {pageData?.totalCount ?? 0} records
           </p>
 
-          <div className="tableWrap">
-            <table>
+          <div className="tableWrap dataTableWrap">
+            <table className="dataTable">
               <thead>
                 <tr>
                   <th>Name</th>

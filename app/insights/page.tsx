@@ -7,6 +7,7 @@ import { AppShell } from "@/components/AppShell";
 import { gqlRequest } from "@/lib/graphql";
 import { formatCurrency } from "@/lib/format";
 import { useAuthStore } from "@/store/auth.store";
+import { useToastStore } from "@/store/toast.store";
 
 interface CountryInsight {
   country: string;
@@ -19,6 +20,7 @@ interface CountryInsight {
 export default function InsightsPage() {
   const router = useRouter();
   const { isAuthenticated } = useAuthStore();
+  const pushToast = useToastStore((state) => state.push);
   const [country, setCountry] = useState("India");
   const [insight, setInsight] = useState<CountryInsight | null>(null);
   const [loading, setLoading] = useState(false);
@@ -47,8 +49,11 @@ export default function InsightsPage() {
         { country }
       );
       setInsight(data.salaryInsightsByCountry);
+      pushToast(`Insights loaded for ${country}.`, "success");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load insights");
+      const message = err instanceof Error ? err.message : "Failed to load insights";
+      setError(message);
+      pushToast(message, "error");
       setInsight(null);
     } finally {
       setLoading(false);
