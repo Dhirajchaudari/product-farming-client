@@ -12,7 +12,12 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000). The app redirects to `/login`.
 
-Set `NEXT_PUBLIC_API_URL` to your GraphQL endpoint (e.g. `http://localhost:8000/graphql`).
+Set `NEXT_PUBLIC_API_URL` in `.env.local` (see `.env.example`):
+
+| Environment | Example |
+|-------------|---------|
+| Local API | `http://localhost:8000/graphql` |
+| Production | `https://api.orbitalops.net/graphql` |
 
 ## HR login (local development)
 

@@ -89,52 +89,52 @@ export default function LoginPage() {
           </div>
 
           <LoginAuthCard
-          title="Sign in"
-          subtitle="Use your work email. HR and employees share this page."
-          footer={
-            <p className="loginAuthHint">
-              New employee? Open the setup link from your welcome email.
-            </p>
-          }
-        >
-          <form className="loginForm loginFormCard" onSubmit={handleLogin}>
-            <label htmlFor="email">Email address</label>
-            <div className="inputWithIcon">
-              <MailIcon />
-              <input
-                id="email"
-                type="email"
-                autoComplete="email"
-                placeholder="you@company.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-            <label htmlFor="password">Password</label>
-            <div className="inputWithIcon">
-              <LockIcon />
-              <input
-                id="password"
-                type="password"
-                autoComplete="current-password"
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-            <button type="submit" className="fullWidth primaryBtn loginSubmitBtn" disabled={loading}>
-              {loading ? (
-                <span className="btnLoading">
-                  <span className="spinner" />
-                  Signing in...
-                </span>
-              ) : (
-                "Continue to dashboard"
-              )}
-            </button>
-          </form>
+            title="Sign in"
+            subtitle="Use your work email. HR and employees share this page."
+            footer={
+              <p className="loginAuthHint">
+                New employee? Open the setup link from your welcome email.
+              </p>
+            }
+          >
+            <form className="loginForm loginFormCard" onSubmit={handleLogin}>
+              <label htmlFor="email">Email address</label>
+              <div className="inputWithIcon">
+                <MailIcon />
+                <input
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  placeholder="you@company.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <label htmlFor="password">Password</label>
+              <div className="inputWithIcon">
+                <LockIcon />
+                <input
+                  id="password"
+                  type="password"
+                  autoComplete="current-password"
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+              <button type="submit" className="fullWidth primaryBtn loginSubmitBtn" disabled={loading}>
+                {loading ? (
+                  <span className="btnLoading">
+                    <span className="spinner" />
+                    Signing in...
+                  </span>
+                ) : (
+                  "Sign in"
+                )}
+              </button>
+            </form>
           </LoginAuthCard>
         </div>
       </main>
