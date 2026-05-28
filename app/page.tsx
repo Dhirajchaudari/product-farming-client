@@ -1,66 +1,141 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+"use client";
+
+import { FormEvent, useState } from "react";
+
+import { gqlRequest } from "@/lib/graphql";
+import { useAuthStore } from "@/store/auth.store";
+
+interface SessionUser {
+  id: string;
+  email: string;
+  role: "hr_manager" | "admin";
+}
+
+interface Employee {
+  id: string;
+  fullName: string;
+  employeeCode: string;
+  jobTitle: string;
+  department: string;
+  country: string;
+  salary: number;
+  currency: string;
+  status: string;
+}
 
 export default function Home() {
+  const { isAuthenticated, email: savedEmail, setAuth, resetAuth } = useAuthStore();
+  const [email, setEmail] = useState(savedEmail || "hr@product-farming.test");
+  const [loading, setLoading] = useState(false);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [error, setError] = useState("");
+
+  async function handleLogin(event: FormEvent<HTMLFormElement>): Promise<void> {
+    event.preventDefault();
+    setLoading(true);
+    setError("");
+    try {
+      const data = await gqlRequest<{ login: SessionUser }>(
+        `mutation Login($email: String!, $role: UserRoleEnum!) {
+          login(email: $email, role: $role) { id email role }
+        }`,
+        { email, role: "hr_manager" }
+      );
+      setAuth(data.login.email, data.login.role);
+      await loadEmployees();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Login failed");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function loadEmployees(): Promise<void> {
+    try {
+      const data = await gqlRequest<{ employees: Employee[] }>(
+        `query Employees {
+          employees {
+            id
+            fullName
+            employeeCode
+            jobTitle
+            department
+            country
+            salary
+            currency
+            status
+          }
+        }`
+      );
+      setEmployees(data.employees);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load employees");
+    }
+  }
+
+  async function handleLogout(): Promise<void> {
+    try {
+      await gqlRequest<{ logout: boolean }>("mutation { logout }");
+    } catch {
+      // best effort
+    }
+    resetAuth();
+    setEmployees([]);
+  }
+
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className={styles.intro}>
-          <h1>To get started, edit the page.tsx file.</h1>
-          <p>
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className={styles.secondary}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+    <main className="container">
+      <h1>Product Farming HR Dashboard</h1>
+      <p className="subtitle">Next.js App Router + Zustand frontend scaffold</p>
+
+      {!isAuthenticated ? (
+        <form className="card" onSubmit={handleLogin}>
+          <h2>Login</h2>
+          <label htmlFor="email">Email</label>
+          <input id="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          <button type="submit" disabled={loading}>{loading ? "Signing in..." : "Sign in as HR Manager"}</button>
+          {error ? <p className="error">{error}</p> : null}
+        </form>
+      ) : (
+        <section className="card">
+          <div className="row">
+            <h2>Employees</h2>
+            <div>
+              <button onClick={loadEmployees}>Refresh</button>
+              <button onClick={handleLogout} className="secondary">Logout</button>
+            </div>
+          </div>
+          {error ? <p className="error">{error}</p> : null}
+          <div className="tableWrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Code</th>
+                  <th>Title</th>
+                  <th>Department</th>
+                  <th>Country</th>
+                  <th>Salary</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {employees.map((employee) => (
+                  <tr key={employee.id}>
+                    <td>{employee.fullName}</td>
+                    <td>{employee.employeeCode}</td>
+                    <td>{employee.jobTitle}</td>
+                    <td>{employee.department}</td>
+                    <td>{employee.country}</td>
+                    <td>{employee.salary} {employee.currency}</td>
+                    <td>{employee.status}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+    </main>
   );
 }
