@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   description: "Modern payroll and workforce management",
   applicationName: "PayrollPilot",
   icons: {
-    icon: [{ url: "/icon", type: "image/png" }],
+    icon: [{ url: "/icon", type: "image/png" }, { url: "/logo.svg", type: "image/svg+xml" }],
     apple: [{ url: "/apple-icon", type: "image/png" }]
   }
 };

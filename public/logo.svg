@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" role="img" aria-label="PayrollPilot">
+  <rect width="48" height="48" rx="13" fill="url(#pp-grad)"/>
+  <path
+    d="M17 14h9.5c4.14 0 7.5 3.36 7.5 7.5S30.64 29 26.5 29H21v5"
+    stroke="#ffffff"
+    stroke-width="3.25"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path d="M15 35h18" stroke="#7dd3fc" stroke-width="2.75" stroke-linecap="round"/>
+  <defs>
+    <linearGradient id="pp-grad" x1="8" y1="6" x2="40" y2="42" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2563eb"/>
+      <stop offset="1" stop-color="#4f46e5"/>
+    </linearGradient>
+  </defs>
+</svg>
