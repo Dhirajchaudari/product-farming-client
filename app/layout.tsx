@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Analytics } from "@vercel/analytics/react";
 import { Plus_Jakarta_Sans, Source_Serif_4 } from "next/font/google";
 
 import { AuthBootstrap } from "@/components/AuthBootstrap";
@@ -38,6 +39,7 @@ export default function RootLayout({
         <AuthBootstrap />
         {children}
         <Toaster />
+        <Analytics />
       </body>
     </html>
   );
